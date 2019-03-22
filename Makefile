@@ -49,7 +49,7 @@ KUBECTL_CONTEXT = $(shell kubectl config current-context)
 
 GOBUILD_FLAGS :=
 
-ALL_ARCH = amd64 arm64
+ALL_ARCH = amd64 arm arm64
 
 QEMUVERSION = v3.0.0
 

@@ -28,9 +28,6 @@ ARCH=$(uname -m)
 if [[ ${ARCH} != "x86_64" ]]; then
   # replace CFLAGS
   sed -i 's/CFLAGS = -msse2 -msse3 -msse4.1 -O3/CFLAGS = -O3/' lua-aho-corasick/Makefile
-  # export PCRE lib directory
-  export PCRE_LIBDIR=$(find /usr/lib -name libpcre*.so* | head -1 | xargs dirname)
-  luarocks install lrexlib-pcre 2.7.2-1 PCRE_LIBDIR=${PCRE_LIBDIR}
 fi
 
 curl -o 96b0a04ce62dd01b6c6c8a8c97df7ce9916d173e.patch -sSL https://github.com/p0pr0ck5/lua-resty-waf/commit/96b0a04ce62dd01b6c6c8a8c97df7ce9916d173e.patch

@@ -19,6 +19,11 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
+function finish {
+  sleep 3600
+}
+trap finish EXIT
+
 export NGINX_VERSION=1.15.9
 export NDK_VERSION=0.3.1rc1
 export SETMISC_VERSION=0.32
@@ -42,6 +47,8 @@ export NGINX_AJP_VERSION=bf6cd93f2098b59260de8d494f0f4b1f11a84627
 export LUAJIT_VERSION=2.1-20190228
 
 export BUILD_PATH=/tmp/build
+
+export DEBIAN_FRONTEND=noninteractive
 
 ARCH=$(uname -m)
 
@@ -98,9 +105,21 @@ clean-install \
   bc \
   || exit 1
 
+# https://www.mail-archive.com/debian-bugs-dist@lists.debian.org/msg1667178.html
+if [[ ${ARCH} == "armv7l" ]]; then
+  echo "Fixing ca-certificates"
+  touch /etc/ssl/certs/ca-certificates.crt
+  c_rehash
+fi
+
 if [[ ${ARCH} == "x86_64" ]]; then
   ln -s /usr/lib/x86_64-linux-gnu/liblua5.1.so /usr/lib/liblua.so
   ln -s /usr/lib/x86_64-linux-gnu /usr/lib/lua-platform-path
+fi
+
+if [[ ${ARCH} == "armv7l" ]]; then
+  ln -s /usr/lib/arm-linux-gnueabihf/liblua5.1.so /usr/lib/liblua.so
+  ln -s /usr/lib/arm-linux-gnueabihf /usr/lib/lua-platform-path
 fi
 
 if [[ ${ARCH} == "aarch64" ]]; then
@@ -244,6 +263,10 @@ if [[ ${ARCH} == "x86_64" ]]; then
   export PCRE_DIR=/usr/lib/x86_64-linux-gnu
 fi
 
+if [[ ${ARCH} == "armv7l" ]]; then
+  export PCRE_DIR=/usr/lib/arm-linux-gnueabihf
+fi
+
 if [[ ${ARCH} == "aarch64" ]]; then
   export PCRE_DIR=/usr/lib/aarch64-linux-gnu
 fi
@@ -314,6 +337,7 @@ make install
 
 # build jaeger lib
 cd "$BUILD_PATH/jaeger-client-cpp-$JAEGER_VERSION"
+patch < /patches/jaeger-client-cpp.patch
 sed -i 's/-Werror/-Wno-psabi/' CMakeLists.txt
 
 cat <<EOF > export.map
